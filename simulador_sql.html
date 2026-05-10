@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Exam Simulator — Database Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --accent: #10b981;
+    --accent2: #06d6a0;
+    --accent-dim: #0d9f6e22;
+    --blue: #58a6ff;
+    --blue-dim: #58a6ff18;
+    --red: #f85149;
+    --red-dim: #f8514920;
+    --yellow: #e3b341;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #484f58;
+    --code-bg: #010409;
+    --radius: 10px;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-ui: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, #10b98115 0%, transparent 60%),
+      linear-gradient(180deg, #0d1117 0%, #080c10 100%);
+  }
+
+  /* === HEADER === */
+  header {
+    width: 100%;
+    max-width: 820px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-size: 14px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  .logo-text span { color: var(--accent); }
+
+  /* === STATS BAR === */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .stat-pill.correct .dot { background: var(--accent); }
+  .stat-pill.wrong .dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .stat-pill.progress { color: var(--blue); }
+  .stat-pill.progress .dot { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+
+  /* === PROGRESS === */
+  .progress-track {
+    width: 100%;
+    max-width: 820px;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 999px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* === MAIN CARD === */
+  .card {
+    width: 100%;
+    max-width: 820px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === CARD HEADER === */
+  .card-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .block-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid #58a6ff33;
+    white-space: nowrap;
+  }
+
+  .block-badge.practica {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: #10b98133;
+  }
+
+  .q-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* === QUESTION BODY === */
+  .card-body { padding: 28px; }
+
+  .question-text {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  /* === CODE BLOCK === */
+  .sql-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow-x: auto;
+  }
+
+  .sql-block::before {
+    content: 'SQL';
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    opacity: 0.5;
+  }
+
+  .sql-block pre {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    white-space: pre;
+    color: #cdd9e5;
+  }
+
+  /* SQL syntax highlighting */
+  .kw  { color: #ff7b72; }   /* keywords */
+  .fn  { color: #d2a8ff; }   /* functions */
+  .str { color: #a5d6ff; }   /* strings/aliases */
+  .num { color: #79c0ff; }   /* numbers */
+  .cmt { color: #8b949e; font-style: italic; }   /* comments */
+  .tbl { color: var(--accent); } /* table names */
+  .op  { color: var(--yellow); } /* operators */
+
+  /* === OPTIONS === */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option:hover:not(.disabled) {
+    border-color: #58a6ff66;
+    background: #1c2333;
+    transform: translateX(3px);
+  }
+
+  .option.correct {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .option.wrong {
+    border-color: var(--red);
+    background: var(--red-dim);
+  }
+
+  .option.disabled { cursor: default; }
+
+  .option-letter {
+    min-width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .option.correct .option-letter {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .option.wrong .option-letter {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+
+  .option-text {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .option-icon {
+    margin-left: auto;
+    font-size: 16px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  /* === FEEDBACK === */
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    animation: fadeIn 0.3s ease;
+    display: none;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .feedback.show { display: block; }
+
+  .feedback.correct-fb {
+    background: var(--accent-dim);
+    border: 1px solid #10b98144;
+  }
+
+  .feedback.wrong-fb {
+    background: var(--red-dim);
+    border: 1px solid #f8514944;
+  }
+
+  .feedback-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  .feedback.correct-fb .feedback-title { color: var(--accent); }
+  .feedback.wrong-fb .feedback-title { color: var(--red); }
+
+  .feedback-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-muted);
+  }
+
+  .feedback-body strong { color: var(--text); }
+
+  /* === NEXT BUTTON === */
+  .card-footer {
+    padding: 20px 28px 24px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .btn-next {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 28px;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px #10b98133;
+  }
+
+  .btn-next.show { display: flex; }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #10b98155; }
+  .btn-next:active { transform: translateY(0); }
+
+  .btn-next svg { width: 16px; height: 16px; }
+
+  /* === FINAL SCREEN === */
+  #final-screen {
+    display: none;
+    width: 100%;
+    max-width: 820px;
+    animation: slideUp 0.4s ease;
+  }
+
+  #final-screen.show { display: block; }
+
+  .final-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 36px;
+    text-align: center;
+  }
+
+  .final-score-ring {
+    width: 140px; height: 140px;
+    margin: 0 auto 32px;
+    position: relative;
+  }
+
+  .final-score-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 8; }
+  .ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+
+  .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-pct {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .ring-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .final-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .final-sub {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 36px;
+  }
+
+  .final-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .final-stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 12px;
+  }
+
+  .final-stat-num {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .final-stat-num.g { color: var(--accent); }
+  .final-stat-num.r { color: var(--red); }
+  .final-stat-num.b { color: var(--blue); }
+
+  .final-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .btn-restart {
+    padding: 13px 40px;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px #10b98133;
+  }
+
+  .btn-restart:hover { transform: translateY(-2px); box-shadow: 0 6px 20px #10b98155; }
+
+  /* === SCROLLBAR === */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+  /* responsive */
+  @media (max-width: 600px) {
+    header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .card-body { padding: 20px; }
+    .card-footer { padding: 16px 20px 20px; }
+    .card-header { padding: 16px 20px 14px; }
+    .final-grid { grid-template-columns: 1fr 1fr; }
+    .final-card { padding: 32px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🗄️</div>
+    <div class="logo-text">SQL <span>Simulator</span> — Database Edition</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-pill progress"><span class="dot"></span><span id="stat-progress">0 / 50</span></div>
+    <div class="stat-pill correct"><span class="dot"></span><span id="stat-correct">0 correctas</span></div>
+    <div class="stat-pill wrong"><span class="dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></span><span id="stat-wrong">0 incorrectas</span></div>
+    <div class="stat-pill"><span id="stat-pct" style="color:var(--yellow)">— %</span></div>
+  </div>
+</header>
+
+<div class="progress-track">
+  <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+</div>
+
+<!-- QUESTION CARD -->
+<div class="card" id="quiz-card">
+  <div class="card-header">
+    <div class="block-badge" id="block-badge">Bloque 1: Teoría</div>
+    <div class="q-number" id="q-number">Pregunta 1 de 50</div>
+  </div>
+
+  <div class="card-body">
+    <div class="question-text" id="question-text"></div>
+    <div class="sql-block" id="sql-block" style="display:none">
+      <pre id="sql-code"></pre>
+    </div>
+    <div class="options" id="options-list"></div>
+    <div class="feedback" id="feedback">
+      <div class="feedback-title" id="fb-title"></div>
+      <div class="feedback-body" id="fb-body"></div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">
+      Siguiente pregunta
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- FINAL SCREEN -->
+<div id="final-screen">
+  <div class="final-card">
+    <div class="final-score-ring">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="58"/>
+        <circle class="ring-fill" id="ring-fill" cx="70" cy="70" r="58"
+          stroke-dasharray="364" stroke-dashoffset="364"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-pct" id="final-pct">0%</div>
+        <div class="ring-label">Score</div>
+      </div>
+    </div>
+    <div class="final-title" id="final-title">Examen Completado</div>
+    <div class="final-sub" id="final-sub"></div>
+    <div class="final-grid">
+      <div class="final-stat">
+        <div class="final-stat-num g" id="fs-correct">0</div>
+        <div class="final-stat-label">Correctas</div>
+      </div>
+      <div class="final-stat">
+        <div class="final-stat-num r" id="fs-wrong">0</div>
+        <div class="final-stat-label">Incorrectas</div>
+      </div>
+      <div class="final-stat">
+        <div class="final-stat-num b">50</div>
+        <div class="final-stat-label">Total</div>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restartQuiz()">🔄 Reiniciar Simulador</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// QUESTIONS DATABASE
+// ============================================================
+const questions = [
+  // ——— BLOQUE 1: Teoría ———
+  {
+    block: "teoría",
+    text: "¿Cuál es la principal característica del modelo relacional definido por Edgar Codd?",
+    code: null,
+    options: [
+      "Almacenar datos en archivos de texto plano.",
+      "Organizar la información en tablas con filas y columnas relacionadas mediante claves.",
+      "El uso obligatorio de procedimientos almacenados.",
+      "La indexación automática de todas las columnas.",
+      "La herencia de tablas entre diferentes bases de datos."
+    ],
+    correct: 1,
+    explanation: "El modelo relacional organiza los datos en <strong>tablas (entidades)</strong> compuestas por tuplas y atributos, conectadas por <strong>claves primarias y foráneas</strong>. Fue formalizado por Edgar Codd en 1970 y es la base de sistemas como PostgreSQL, MySQL y SQL Server."
+  },
+  {
+    block: "teoría",
+    text: "En PostgreSQL, ¿qué tipo de dato es el más recomendado para almacenar valores monetarios como el monto de un viaje?",
+    code: null,
+    options: [
+      "REAL",
+      "DOUBLE PRECISION",
+      "FLOAT",
+      "NUMERIC(p, s)",
+      "INTEGER"
+    ],
+    correct: 3,
+    explanation: "El tipo <strong>NUMERIC</strong> es exacto y evita errores de precisión de punto flotante comunes en cálculos financieros. FLOAT/REAL/DOUBLE son tipos aproximados; ej.: <code>0.1 + 0.2 ≠ 0.3</code> en punto flotante."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué garantiza la Integridad Referencial a través de una Foreign Key (FK)?",
+    code: null,
+    options: [
+      "Que no existan valores duplicados en la tabla.",
+      "Que la columna no acepte valores NULL.",
+      "Que un valor en la tabla hija siempre corresponda a un valor existente en la tabla padre.",
+      "Que las consultas sean más rápidas automáticamente.",
+      "Que los datos se borren físicamente de forma inmediata."
+    ],
+    correct: 2,
+    explanation: "La FK asegura que la relación entre tablas sea válida, <strong>impidiendo insertar registros huérfanos</strong>. Por ejemplo, no se puede crear un viaje con un <code>chofer_id</code> que no exista en la tabla Choferes."
+  },
+  {
+    block: "teoría",
+    text: "Si se define una FK con la cláusula ON DELETE CASCADE, ¿qué sucede al eliminar un pasajero?",
+    code: null,
+    options: [
+      "El sistema impide la eliminación si el pasajero tiene viajes.",
+      "Se eliminan automáticamente todos los viajes asociados a ese pasajero.",
+      "Los viajes asociados quedan con el pasajero_id en NULL.",
+      "Solo se borra el pasajero, dejando los viajes como registros huérfanos.",
+      "Se genera un error de violación de integridad."
+    ],
+    correct: 1,
+    explanation: "La acción <strong>CASCADE</strong> propaga la eliminación de la fila padre a todas las filas hijas relacionadas. Es útil para mantener la integridad referencial automáticamente. La opción SET NULL haría lo de la opción C."
+  },
+  {
+    block: "teoría",
+    text: "En el álgebra relacional, ¿qué operación equivale a la cláusula SELECT (elegir columnas específicas)?",
+    code: null,
+    options: [
+      "Selección (σ)",
+      "Unión (∪)",
+      "Proyección (π)",
+      "Intersección (∩)",
+      "Producto Cartesiano (×)"
+    ],
+    correct: 2,
+    explanation: "La <strong>Proyección (π)</strong> selecciona un subconjunto de atributos (columnas) de una relación. La <strong>Selección (σ)</strong> filtra filas (equivale al WHERE de SQL). Es una distinción clásica del álgebra relacional de Codd."
+  },
+  {
+    block: "teoría",
+    text: "¿Cuál es la diferencia teórica entre un INNER JOIN y un LEFT JOIN?",
+    code: null,
+    options: [
+      "El INNER JOIN es más lento que el LEFT JOIN.",
+      "El INNER JOIN devuelve solo coincidencias; el LEFT JOIN devuelve todas las filas de la izquierda aunque no tengan coincidencia.",
+      "El INNER JOIN requiere una clave primaria obligatoriamente.",
+      "El LEFT JOIN elimina los duplicados automáticamente.",
+      "No hay diferencia, son sinónimos en PostgreSQL."
+    ],
+    correct: 1,
+    explanation: "El <strong>INNER JOIN</strong> filtra solo filas con correspondencia en ambas tablas. El <strong>LEFT JOIN</strong> preserva todas las filas de la tabla izquierda, generando <code>NULL</code> en las columnas de la derecha cuando no hay coincidencia."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué operador de conjunto combina resultados eliminando duplicados automáticamente?",
+    code: null,
+    options: [
+      "UNION ALL",
+      "INTERSECT",
+      "UNION",
+      "EXCEPT",
+      "CROSS JOIN"
+    ],
+    correct: 2,
+    explanation: "A diferencia de <strong>UNION ALL</strong> (que preserva duplicados), <strong>UNION</strong> realiza un proceso adicional de deduplicación de filas repetidas, similar a aplicar un <code>DISTINCT</code> al resultado combinado."
+  },
+  {
+    block: "teoría",
+    text: "¿En qué orden lógico procesa el motor SQL una consulta con GROUP BY y HAVING?",
+    code: null,
+    options: [
+      "Primero HAVING y luego agrupa.",
+      "Primero agrupa y luego aplica el filtro HAVING.",
+      "HAVING y WHERE se ejecutan simultáneamente.",
+      "Solo se puede usar HAVING si hay un ORDER BY.",
+      "Agrupa después de ordenar los resultados."
+    ],
+    correct: 1,
+    explanation: "El orden lógico de procesamiento es: <strong>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY</strong>. El <code>GROUP BY</code> crea los grupos primero y el <code>HAVING</code> filtra sobre los resultados ya agregados."
+  },
+  {
+    block: "teoría",
+    text: "¿Cuándo es estrictamente necesario usar HAVING en lugar de WHERE?",
+    code: null,
+    options: [
+      "Cuando queremos filtrar por una columna de tipo fecha.",
+      "Cuando el filtro implica una función de agregación (ej. COUNT, SUM).",
+      "Cuando la consulta tiene más de tres JOINs.",
+      "Cuando queremos eliminar valores NULL.",
+      "Siempre que se use un alias en el SELECT."
+    ],
+    correct: 1,
+    explanation: "<strong>WHERE</strong> filtra filas individuales <em>antes</em> de agrupar. <strong>HAVING</strong> filtra grupos ya calculados. Usar <code>WHERE AVG(monto) > 1000</code> lanzaría un error porque las funciones de agregación no están permitidas en WHERE."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué caracteriza a una subconsulta escalar?",
+    code: null,
+    options: [
+      "Devuelve una lista completa de IDs.",
+      "Siempre se encuentra en la cláusula FROM.",
+      "Devuelve exactamente un solo valor (una fila y una columna).",
+      "Se ejecuta una vez por cada fila de la consulta exterior.",
+      "Requiere obligatoriamente el operador IN."
+    ],
+    correct: 2,
+    explanation: "Las subconsultas escalares producen <strong>un único valor</strong> (1 fila × 1 columna) que se puede comparar con operadores como <code>=</code>, <code>></code>, <code><</code>. Si devuelven más de una fila, PostgreSQL lanza un error en tiempo de ejecución."
+  },
+  {
+    block: "teoría",
+    text: "¿Cuál es el riesgo de usar NOT IN con una subconsulta que devuelve al menos un valor NULL?",
+    code: null,
+    options: [
+      "La consulta lanza un error de sintaxis.",
+      "La consulta devuelve todas las filas de la tabla.",
+      "La condición siempre será falsa y no devolverá ningún resultado.",
+      "El motor reemplaza el NULL por un 0 automáticamente.",
+      "Solo se ignoran las filas con NULL."
+    ],
+    correct: 2,
+    explanation: "SQL usa lógica de tres valores (TRUE/FALSE/UNKNOWN). SQL no puede afirmar que un valor es distinto de <strong>UNKNOWN</strong>, por lo que <code>NOT IN</code> falla silenciosamente devolviendo 0 filas cuando el conjunto contiene un NULL. La alternativa segura es usar <code>NOT EXISTS</code>."
+  },
+  {
+    block: "teoría",
+    text: "¿Por qué el operador EXISTS suele ser más eficiente que IN en tablas grandes?",
+    code: null,
+    options: [
+      "Porque utiliza índices de texto.",
+      "Porque se detiene tan pronto encuentra la primera coincidencia (short-circuit).",
+      "Porque no requiere una subconsulta.",
+      "Porque carga toda la tabla en memoria RAM.",
+      "Porque solo funciona con claves primarias."
+    ],
+    correct: 1,
+    explanation: "<strong>EXISTS</strong> usa <em>short-circuit evaluation</em>: tan pronto encuentra la primera fila que cumple la condición, deja de escanear. <code>IN</code> debe materializar todo el conjunto de resultados antes de comparar, lo que es costoso en tablas grandes."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué define a una subconsulta correlacionada?",
+    code: null,
+    options: [
+      "Que se puede ejecutar de forma independiente a la consulta principal.",
+      "Que hace referencia a una columna de la consulta exterior.",
+      "Que solo puede aparecer en la cláusula SELECT.",
+      "Que devuelve una tabla temporal con alias obligatorio.",
+      "Que es obligatoriamente recursiva."
+    ],
+    correct: 1,
+    explanation: "Una subconsulta correlacionada <strong>referencia columnas de la consulta exterior</strong>, por lo que no puede ejecutarse de forma independiente. Al depender de valores externos, se re-ejecuta una vez por cada fila procesada por la consulta principal."
+  },
+  {
+    block: "teoría",
+    text: "En el modelo ACID, ¿qué propiedad asegura que si un servidor se apaga tras un COMMIT, los datos del viaje persisten?",
+    code: null,
+    options: [
+      "Atomicidad",
+      "Consistencia",
+      "Aislamiento",
+      "Durabilidad",
+      "Disponibilidad"
+    ],
+    correct: 3,
+    explanation: "La <strong>Durabilidad</strong> garantiza que los cambios confirmados sobrevivan a fallos del sistema. PostgreSQL la implementa con el <strong>WAL (Write-Ahead Log)</strong>, que registra los cambios en disco antes de confirmarlos."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué componente del motor PostgreSQL elige el plan de ejecución más eficiente?",
+    code: null,
+    options: [
+      "Parser",
+      "Rewriter",
+      "Planner",
+      "Executor",
+      "Analyzer"
+    ],
+    correct: 2,
+    explanation: "El <strong>Planner</strong> (también llamado Optimizer) analiza las estadísticas de las tablas y decide la estrategia de acceso más eficiente, por ejemplo <em>Sequential Scan</em> vs <em>Index Scan</em> o el orden de los JOINs."
+  },
+  {
+    block: "teoría",
+    text: "¿Cuál es la función del mecanismo MVCC en PostgreSQL?",
+    code: null,
+    options: [
+      "Comprimir los datos en disco para ahorrar espacio.",
+      "Permitir que lectores y escritores no se bloqueen entre sí creando versiones de filas.",
+      "Realizar copias de seguridad automáticas cada hora.",
+      "Encriptar la conexión entre el cliente y el servidor.",
+      "Sincronizar los relojes de diferentes zonas horarias."
+    ],
+    correct: 1,
+    explanation: "<strong>MVCC (Multi-Version Concurrency Control)</strong> permite que cada transacción vea una \"foto\" consistente de los datos sin esperar a que otras terminen. Los lectores no bloquean a los escritores y viceversa, lo que maximiza la concurrencia."
+  },
+  {
+    block: "teoría",
+    text: "Un índice B-Tree es ideal para:",
+    code: null,
+    options: [
+      "Búsquedas de texto completo en descripciones largas.",
+      "Consultas de igualdad y rangos (>, <, BETWEEN).",
+      "Almacenar imágenes en formato binario.",
+      "Tablas que solo tienen 10 filas de datos.",
+      "Columnas que cambian de valor constantemente cada segundo."
+    ],
+    correct: 1,
+    explanation: "El índice <strong>B-Tree</strong> es la estructura estándar que reduce la complejidad de búsqueda de <code>O(n)</code> a <code>O(log n)</code>. Es óptimo para consultas de igualdad (<code>=</code>), rangos (<code>BETWEEN</code>, <code>></code>, <code><</code>) y ordenamiento."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué sucede si intentas usar una función de agregación (como AVG) directamente en un WHERE?",
+    code: null,
+    options: [
+      "PostgreSQL calcula el promedio global y filtra.",
+      "Se genera un error porque las agregaciones no están permitidas en WHERE.",
+      "El motor convierte la consulta en un HAVING automáticamente.",
+      "Solo funciona si la tabla tiene menos de 1000 filas.",
+      "Se debe usar el alias de la columna obligatoriamente."
+    ],
+    correct: 1,
+    explanation: "PostgreSQL lanza el error: <em>\"aggregate functions are not allowed in WHERE\"</em>. Para filtrar por un agregado se debe usar una <strong>subconsulta</strong> (ej: <code>WHERE monto = (SELECT AVG(monto) FROM Viajes)</code>) o la cláusula <code>HAVING</code>."
+  },
+  {
+    block: "teoría",
+    text: "El tipo de dato TIMESTAMPTZ se prefiere sobre TIMESTAMP porque:",
+    code: null,
+    options: [
+      "Ocupa menos espacio en disco.",
+      "Almacena internamente en UTC y maneja conversiones de zona horaria.",
+      "Es más rápido para realizar ordenamientos.",
+      "Permite almacenar fechas anteriores al año 1900.",
+      "Es el único que soporta la función NOW()."
+    ],
+    correct: 1,
+    explanation: "<strong>TIMESTAMPTZ</strong> almacena internamente en UTC y convierte automáticamente según la zona horaria del cliente. Esto evita errores de lógica críticos cuando la aplicación es usada en múltiples regiones geográficas."
+  },
+  {
+    block: "teoría",
+    text: "¿Para qué sirve el comando EXPLAIN ANALYZE?",
+    code: null,
+    options: [
+      "Para borrar datos duplicados de una tabla.",
+      "Para ver el plan de ejecución y el tiempo real que tomó la consulta.",
+      "Para documentar el esquema de la base de datos automáticamente.",
+      "Para cambiar la clave primaria de una tabla.",
+      "Para importar datos desde un archivo CSV."
+    ],
+    correct: 1,
+    explanation: "<code>EXPLAIN ANALYZE</code> es la herramienta fundamental de <strong>profiling en PostgreSQL</strong>. Muestra el plan de ejecución elegido por el Planner y los tiempos reales de cada operación. Permite diagnosticar consultas lentas y verificar si se están usando los índices correctos."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué es un esquema (schema) en PostgreSQL?",
+    code: null,
+    options: [
+      "Una base de datos independiente.",
+      "Un espacio de nombres para organizar lógicamente tablas y objetos.",
+      "El archivo físico donde se guardan los datos.",
+      "Una copia de seguridad de la estructura.",
+      "Un tipo de índice especializado."
+    ],
+    correct: 1,
+    explanation: "Un <strong>schema</strong> es un espacio de nombres lógico dentro de una base de datos. Permite separar objetos, por ejemplo: <code>ventas.clientes</code> vs <code>inventario.items</code>, evitando colisiones de nombres y organizando el proyecto."
+  },
+  {
+    block: "teoría",
+    text: "¿Cuál es la restricción de una clave primaria (PK)?",
+    code: null,
+    options: [
+      "Solo puede ser de tipo numérico.",
+      "Debe ser única y no puede contener valores NULL.",
+      "Debe llamarse siempre \"id\".",
+      "Requiere un índice manual creado por el usuario.",
+      "Puede haber varias en una misma tabla."
+    ],
+    correct: 1,
+    explanation: "Una <strong>clave primaria (PK)</strong> identifica de forma unívoca cada fila. Sus restricciones son: (1) valores únicos, (2) no puede ser NULL, (3) solo puede haber una por tabla. PostgreSQL crea automáticamente un índice B-Tree al declararla."
+  },
+  {
+    block: "teoría",
+    text: "¿Qué operador se usa para verificar si un valor coincide con AL MENOS UNO de los valores de una lista?",
+    code: null,
+    options: [
+      "ALL",
+      "NOT IN",
+      "ANY",
+      "EXISTS",
+      "BETWEEN"
+    ],
+    correct: 2,
+    explanation: "<strong>ANY</strong> verifica si la condición se cumple para al menos uno de los valores del subconjunto. Es equivalente funcional a <code>IN</code> para igualdad, pero permite comparaciones más flexibles: <code>monto > ANY (subconsulta)</code>."
+  },
+  {
+    block: "teoría",
+    text: "Una \"tabla derivada\" en SQL es:",
+    code: null,
+    options: [
+      "Una tabla física creada con CREATE TABLE.",
+      "Una subconsulta en la cláusula FROM con un alias obligatorio.",
+      "Una columna calculada en el SELECT.",
+      "Una vista persistente en el disco.",
+      "Una relación creada por una clave foránea."
+    ],
+    correct: 1,
+    explanation: "Una <strong>tabla derivada</strong> es una subconsulta ubicada en la cláusula <code>FROM</code> que se trata como una tabla temporal durante la ejecución. En PostgreSQL, el alias es <strong>obligatorio</strong>: <code>FROM (SELECT ...) AS mi_alias</code>."
+  },
+  {
+    block: "teoría",
+    text: "El concepto de \"Atomicidad\" en una transacción significa:",
+    code: null,
+    options: [
+      "Que los datos se comprimen al máximo.",
+      "Que la operación es \"todo o nada\"; si falla una parte, se revierte todo.",
+      "Que solo un usuario puede acceder a la tabla a la vez.",
+      "Que las claves primarias deben ser números enteros.",
+      "Que la base de datos es muy rápida."
+    ],
+    correct: 1,
+    explanation: "La <strong>Atomicidad</strong> (la 'A' de ACID) garantiza que una transacción se ejecuta completamente o no se ejecuta en absoluto. Si falla una instrucción a mitad, se hace <code>ROLLBACK</code> automáticamente, evitando estados inconsistentes como debitar origen sin acreditar destino."
+  },
+
+  // ——— BLOQUE 2: Práctica ———
+  {
+    block: "práctica",
+    text: "Analiza el siguiente código. Si la subconsulta devuelve un valor NULL por un error en los datos de Viajes, ¿cuál es el resultado?",
+    code: `SELECT nombre 
+FROM Pasajeros 
+WHERE id NOT IN (SELECT pasajero_id FROM Viajes);`,
+    options: [
+      "Una lista con los pasajeros que no han viajado.",
+      "Un error de ejecución de PostgreSQL.",
+      "Un conjunto vacío de filas.",
+      "Todos los pasajeros de la tabla.",
+      "Solo los pasajeros que tienen email."
+    ],
+    correct: 2,
+    explanation: "Al usar <code>NOT IN</code>, si existe un <strong>NULL</strong> en el conjunto de resultados de la subconsulta, la comparación lógica global se vuelve <em>UNKNOWN</em> y no retorna ninguna fila. La solución es usar <code>NOT EXISTS</code> que maneja NULLs correctamente."
+  },
+  {
+    block: "práctica",
+    text: "Identifica el error en esta consulta de tabla derivada:",
+    code: `SELECT * FROM (
+    SELECT zona_id, SUM(monto) as total_zona
+    FROM Viajes
+    GROUP BY zona_id
+) WHERE total_zona > 5000;`,
+    options: [
+      "No se puede usar SUM en una subconsulta.",
+      "Falta el alias obligatorio para la tabla derivada.",
+      "El GROUP BY debe ir fuera del paréntesis.",
+      "No se puede filtrar por total_zona en el exterior.",
+      "zona_id no es una columna válida."
+    ],
+    correct: 1,
+    explanation: "En PostgreSQL, toda subconsulta en el <code>FROM</code> (tabla derivada) debe tener un <strong>alias obligatorio</strong>. La corrección sería: <code>FROM (...) AS resumen WHERE resumen.total_zona > 5000;</code>"
+  },
+  {
+    block: "práctica",
+    text: "¿Qué intentamos obtener con la siguiente consulta?",
+    code: `SELECT nombre FROM Choferes c
+WHERE EXISTS (
+    SELECT 1 FROM Viajes v 
+    WHERE v.chofer_id = c.id AND v.monto > 10000
+);`,
+    options: [
+      "Choferes que han hecho todos los viajes de más de 10000.",
+      "El promedio de los viajes de los choferes.",
+      "Choferes que han realizado al menos un viaje con un monto superior a 10000.",
+      "Choferes que nunca han cobrado menos de 10000.",
+      "Una lista de choferes y sus montos totales."
+    ],
+    correct: 2,
+    explanation: "<code>EXISTS</code> verifica la <strong>existencia de al menos un registro</strong> en Viajes que cumpla la condición correlacionada (<code>v.chofer_id = c.id</code>). Si existe aunque sea un viaje >10000 para ese chofer, el EXISTS es TRUE y el chofer aparece en el resultado."
+  },
+  {
+    block: "práctica",
+    text: "¿Cuál es el beneficio principal de usar una CTE en la siguiente situación?",
+    code: `WITH ResumenViajes AS (
+    SELECT chofer_id, COUNT(*) as cant_viajes, 
+           SUM(monto) as recaudacion
+    FROM Viajes
+    GROUP BY chofer_id
+)
+SELECT c.nombre, r.recaudacion
+FROM Choferes c
+JOIN ResumenViajes r ON c.id = r.chofer_id
+WHERE r.cant_viajes > 50;`,
+    options: [
+      "Hace que la consulta sea persistente en la base de datos.",
+      "Mejora la legibilidad y permite reutilizar el \"ResumenViajes\" en la misma consulta.",
+      "Crea automáticamente un índice en recaudacion.",
+      "Permite saltarse las restricciones de FK.",
+      "Es la única forma de hacer un JOIN."
+    ],
+    correct: 1,
+    explanation: "Las <strong>CTEs (Common Table Expressions)</strong> funcionan como vistas temporales que organizan el código complejo de forma secuencial. El bloque <code>ResumenViajes</code> puede referenciarse múltiples veces en la consulta principal sin repetir código."
+  },
+  {
+    block: "práctica",
+    text: "En esta consulta correlacionada en el SELECT, ¿qué valor se mostrará para un chofer que no tiene viajes?",
+    code: `SELECT nombre, 
+       (SELECT MAX(monto) FROM Viajes 
+        WHERE chofer_id = Choferes.id) as max_viaje
+FROM Choferes;`,
+    options: [
+      "0",
+      "Error de ejecución.",
+      "NULL",
+      "El promedio general de la tabla.",
+      "Una cadena vacía."
+    ],
+    correct: 2,
+    explanation: "Al no encontrar filas que coincidan, la subconsulta correlacionada opera sobre un <strong>conjunto vacío</strong>. <code>MAX()</code> sobre un conjunto vacío devuelve <code>NULL</code> en SQL. Esto se puede manejar con <code>COALESCE(MAX(monto), 0)</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué operador completaría correctamente la lógica: 'Pasajeros que pagaron más que CUALQUIER viaje realizado en la zona Norte'?",
+    code: `SELECT nombre FROM Pasajeros p
+JOIN Viajes v ON p.id = v.pasajero_id
+WHERE v.monto > _____ (
+    SELECT monto FROM Viajes 
+    WHERE zona_id = 1 -- id de Zona Norte
+);`,
+    options: [
+      "ANY",
+      "SOME",
+      "EXISTS",
+      "ALL",
+      "IN"
+    ],
+    correct: 3,
+    explanation: "<strong>ALL</strong> requiere que la condición se cumpla para <em>todos</em> los valores de la lista (mayor al máximo de la zona Norte). <code>> ALL</code> es equivalente a <code>> MAX(...)</code>. <code>> ANY</code> sería equivalente a <code>> MIN(...)</code>."
+  },
+  {
+    block: "práctica",
+    text: "Analiza el siguiente código con CTEs encadenadas. ¿Qué realiza la consulta?",
+    code: `WITH ventas_por_zona AS (
+    SELECT zona_id, SUM(monto) as total 
+    FROM Viajes GROUP BY zona_id
+),
+promedio_global AS (
+    SELECT AVG(total) as avg_total 
+    FROM ventas_por_zona
+)
+SELECT z.nombre 
+FROM Zonas z
+JOIN ventas_por_zona vz ON z.id = vz.zona_id
+WHERE vz.total > (SELECT avg_total FROM promedio_global);`,
+    options: [
+      "Lista las zonas cuya recaudación es mayor al promedio de todas las zonas.",
+      "Calcula el promedio de cada viaje individual.",
+      "Muestra los choferes de las zonas más caras.",
+      "Es un error porque no se pueden usar dos CTEs.",
+      "Borra las zonas con pocas ventas."
+    ],
+    correct: 0,
+    explanation: "La primera CTE agrupa recaudación por zona, la segunda calcula el promedio de esas recaudaciones y el <code>SELECT</code> final filtra solo las zonas que superan ese promedio. Es un patrón clásico de <strong>CTEs encadenadas</strong> para análisis estadístico."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué resultado arrojaría esta consulta si el pasajero con id=10 no tiene viajes registrados?",
+    code: `SELECT nombre FROM Pasajeros p
+WHERE NOT EXISTS (
+    SELECT 1 FROM Viajes v 
+    WHERE v.pasajero_id = p.id
+) AND p.id = 10;`,
+    options: [
+      "Ninguna fila.",
+      "El nombre del pasajero con id 10.",
+      "NULL.",
+      "Todos los pasajeros excepto el 10.",
+      "Un error de FK."
+    ],
+    correct: 1,
+    explanation: "<code>NOT EXISTS</code> devuelve <strong>TRUE</strong> cuando la subconsulta no encuentra filas. Como el pasajero con id=10 no tiene viajes, <code>NOT EXISTS</code> es TRUE, y el filtro <code>AND p.id = 10</code> devuelve su nombre."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué error lógico presenta esta consulta?",
+    code: `SELECT nombre, monto
+FROM Choferes c
+JOIN Viajes v ON c.id = v.chofer_id
+WHERE monto = MAX(monto);`,
+    options: [
+      "No se puede usar MAX en el WHERE.",
+      "Falta el GROUP BY.",
+      "El JOIN está mal estructurado.",
+      "No se puede seleccionar nombre y monto a la vez.",
+      "El alias v no es necesario."
+    ],
+    correct: 0,
+    explanation: "Las <strong>funciones de agregación no están permitidas en WHERE</strong>. PostgreSQL lanza: <em>\"aggregate functions are not allowed in WHERE\"</em>. La solución es: <code>WHERE monto = (SELECT MAX(monto) FROM Viajes)</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Para qué sirve el COALESCE en este reporte de recaudación?",
+    code: `WITH rec_chofer AS (
+    SELECT chofer_id, SUM(monto) as suma 
+    FROM Viajes GROUP BY chofer_id
+)
+SELECT c.nombre, COALESCE(r.suma, 0) as total
+FROM Choferes c
+LEFT JOIN rec_chofer r ON c.id = r.chofer_id;`,
+    options: [
+      "Para ordenar los resultados de mayor a menor.",
+      "Para evitar que los choferes sin viajes muestren NULL y en su lugar muestren 0.",
+      "Para eliminar a los choferes que no tienen viajes del resultado.",
+      "Para redondear los decimales del monto.",
+      "Para unir las tablas Choferes y Viajes."
+    ],
+    correct: 1,
+    explanation: "El <code>LEFT JOIN</code> genera <strong>NULLs</strong> en las columnas de <code>rec_chofer</code> para choferes sin viajes. <code>COALESCE(r.suma, 0)</code> reemplaza esos NULLs por <code>0</code>, produciendo un reporte más limpio y útil."
+  },
+  {
+    block: "práctica",
+    text: "¿Cuál es el propósito de esta subconsulta en el SELECT?",
+    code: `SELECT p.nombre,
+       (SELECT COUNT(*) FROM Viajes v 
+        WHERE v.pasajero_id = p.id) as total_viajes
+FROM Pasajeros p;`,
+    options: [
+      "Es un JOIN encubierto que duplica filas.",
+      "Calcula la cantidad de viajes de cada pasajero de forma correlacionada.",
+      "Filtra a los pasajeros que no tienen viajes.",
+      "Es una consulta independiente que se ejecuta una sola vez.",
+      "Solo funciona si el pasajero tiene exactamente un viaje."
+    ],
+    correct: 1,
+    explanation: "Esta es una <strong>subconsulta correlacionada en el SELECT</strong>. Se ejecuta <em>una vez por cada fila</em> de Pasajeros, devolviendo el conteo específico de viajes para ese <code>pasajero_id</code>. Es equivalente a un <code>LEFT JOIN</code> con <code>GROUP BY</code>."
+  },
+  {
+    block: "práctica",
+    text: "Identifica el comportamiento de ANY en este código:",
+    code: `SELECT * FROM Viajes 
+WHERE monto > ANY (
+    SELECT monto FROM Viajes WHERE zona_id = 2
+);`,
+    options: [
+      "Devuelve viajes con monto mayor al promedio de la zona 2.",
+      "Devuelve viajes con monto mayor al viaje más barato de la zona 2.",
+      "Devuelve viajes con monto mayor al viaje más caro de la zona 2.",
+      "Es un error de sintaxis en PostgreSQL.",
+      "Solo devuelve viajes de la zona 2."
+    ],
+    correct: 1,
+    explanation: "<code>&gt; ANY</code> significa \"mayor a <strong>al menos uno</strong>\" de los valores del conjunto. Lógicamente es equivalente a <code>&gt; MIN(...)</code>. Por el contrario, <code>&gt; ALL</code> sería equivalente a <code>&gt; MAX(...)</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué corregirías en esta consulta para que sea válida?",
+    code: `SELECT zona_id, AVG(monto)
+FROM Viajes
+WHERE AVG(monto) > 1000
+GROUP BY zona_id;`,
+    options: [
+      "Cambiar WHERE por HAVING.",
+      "Quitar el GROUP BY.",
+      "Cambiar AVG por SUM.",
+      "Agregar un JOIN con Zonas.",
+      "Poner el AVG en el ORDER BY."
+    ],
+    correct: 0,
+    explanation: "El filtrado sobre <strong>grupos ya calculados</strong> debe hacerse con <code>HAVING</code>, no <code>WHERE</code>. La consulta corregida: <code>GROUP BY zona_id HAVING AVG(monto) > 1000</code>. Recuerda que WHERE se aplica antes del agrupamiento."
+  },
+  {
+    block: "práctica",
+    text: "Analiza el uso de la tabla derivada. ¿Qué información estamos obteniendo?",
+    code: `SELECT AVG(t.cantidad) 
+FROM (
+    SELECT chofer_id, COUNT(*) as cantidad 
+    FROM Viajes 
+    GROUP BY chofer_id
+) AS t;`,
+    options: [
+      "El monto promedio de todos los viajes.",
+      "El promedio de viajes realizados por chofer.",
+      "El chofer con más viajes.",
+      "La cantidad total de choferes.",
+      "Un error porque no se puede promediar un conteo."
+    ],
+    correct: 1,
+    explanation: "La subconsulta interior cuenta viajes por chofer (ej: chofer A=30, B=45, C=20). La consulta exterior calcula el <strong>promedio de esos conteos</strong>. Es decir: ¿cuántos viajes hace un chofer promedio? Patrón muy útil para reportes gerenciales."
+  },
+  {
+    block: "práctica",
+    text: "¿Cuál es el resultado de un INTERSECT entre 'Pasajeros que viajaron en Enero' y 'Pasajeros que viajaron en Febrero'?",
+    code: null,
+    options: [
+      "Todos los pasajeros de ambos meses con duplicados.",
+      "Pasajeros que viajaron en Enero pero no en Febrero.",
+      "Solo los pasajeros que realizaron viajes en ambos meses.",
+      "Pasajeros que no viajaron en ninguno de los dos meses.",
+      "La suma de los montos de ambos meses."
+    ],
+    correct: 2,
+    explanation: "<strong>INTERSECT</strong> devuelve solo las filas que aparecen en <em>ambas</em> consultas (la intersección matemática). Es equivalente a buscar pasajeros activos en ambos meses. <code>EXCEPT</code> haría lo de la opción B (en Enero pero NO en Febrero)."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué sucedería si ejecutas esta consulta en PostgreSQL?",
+    code: `WITH ranking AS (
+    SELECT id, monto FROM Viajes 
+    ORDER BY monto DESC
+)
+SELECT * FROM ranking WHERE monto > 1000;`,
+    options: [
+      "Se crea una tabla permanente llamada ranking.",
+      "Se ejecuta correctamente mostrando viajes caros.",
+      "Error porque la CTE no tiene un GROUP BY.",
+      "Error porque falta el alias en el SELECT *.",
+      "Solo funciona si se usa RECURSIVE."
+    ],
+    correct: 1,
+    explanation: "Es una <strong>CTE simple válida</strong>. El <code>ORDER BY</code> dentro de la CTE puede ser ignorado por el optimizador (a menos que uses <code>FETCH FIRST</code>), pero la consulta es sintácticamente correcta y filtra viajes con monto > 1000."
+  },
+  {
+    block: "práctica",
+    text: "¿Cómo optimizarías esta consulta que usa IN por una versión más eficiente?",
+    code: `SELECT * FROM Zonas 
+WHERE id IN (SELECT zona_id FROM Viajes);`,
+    options: [
+      "Usar NOT IN.",
+      "Usar EXISTS con una subconsulta correlacionada.",
+      "Eliminar el WHERE.",
+      "Usar un UNION.",
+      "Cambiar a un CROSS JOIN."
+    ],
+    correct: 1,
+    explanation: "<code>EXISTS</code> es preferible en producción por su <strong>evaluación short-circuit</strong>: se detiene al encontrar la primera coincidencia. La versión optimizada: <code>WHERE EXISTS (SELECT 1 FROM Viajes v WHERE v.zona_id = z.id)</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué indica el campo '1' en SELECT 1 FROM Viajes... dentro de un EXISTS?",
+    code: `WHERE EXISTS (
+    SELECT 1 FROM Viajes v 
+    WHERE v.chofer_id = c.id
+)`,
+    options: [
+      "Que solo debe devolver la primera fila encontrada.",
+      "Es una convención; a EXISTS no le importa qué columnas se seleccionen, solo si hay filas.",
+      "Que el valor de la columna debe ser igual a 1.",
+      "Que se debe indexar la columna 1.",
+      "Es un error y debería ser SELECT *."
+    ],
+    correct: 1,
+    explanation: "El motor <strong>ignora completamente la lista del SELECT</strong> dentro de EXISTS; solo verifica si la subconsulta produce al menos una fila. Por convención se usa <code>SELECT 1</code> para indicar explícitamente que no nos importa qué columnas retorna."
+  },
+  {
+    block: "práctica",
+    text: "En el contexto del proyecto, ¿qué encontraría este query?",
+    code: `SELECT * FROM Pasajeros p
+WHERE 2 < (
+    SELECT COUNT(*) FROM Viajes v 
+    WHERE v.pasajero_id = p.id
+);`,
+    options: [
+      "Pasajeros con exactamente 2 viajes.",
+      "Pasajeros que han realizado más de 2 viajes.",
+      "Los dos primeros pasajeros de la tabla.",
+      "Pasajeros cuyo id es mayor a 2.",
+      "Error de sintaxis."
+    ],
+    correct: 1,
+    explanation: "La subconsulta correlacionada cuenta los viajes de cada pasajero y el <code>WHERE 2 < COUNT(*)</code> filtra aquellos donde ese conteo es mayor que 2. Es equivalente a <code>HAVING COUNT(*) > 2</code> en una versión con <code>GROUP BY</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué significa EXCEPT en la siguiente operación?",
+    code: `SELECT id FROM Choferes
+EXCEPT
+SELECT chofer_id FROM Viajes;`,
+    options: [
+      "Choferes que han hecho al menos un viaje.",
+      "Choferes que no tienen ningún viaje registrado.",
+      "Choferes que tienen viajes anulados.",
+      "La unión de todos los choferes.",
+      "Error porque las columnas no se llaman igual."
+    ],
+    correct: 1,
+    explanation: "<strong>EXCEPT</strong> devuelve las filas de la primera consulta que <em>no están</em> en la segunda. Es la diferencia de conjuntos: IDs de choferes que no aparecen en ningún registro de Viajes. Equivale a un <code>LEFT JOIN ... WHERE chofer_id IS NULL</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué función cumple DISTINCT en una subconsulta usada con IN?",
+    code: `SELECT nombre FROM Pasajeros
+WHERE id IN (
+    SELECT DISTINCT pasajero_id FROM Viajes
+);`,
+    options: [
+      "Es obligatoria para que el query funcione.",
+      "Ninguna funcional, ya que IN ignora duplicados lógicamente al buscar coincidencias.",
+      "Aumenta la velocidad drásticamente.",
+      "Ordena los resultados.",
+      "Evita que la consulta principal falle."
+    ],
+    correct: 1,
+    explanation: "<code>IN</code> solo verifica <strong>presencia</strong> en un conjunto, por lo que los duplicados en la lista no afectan el resultado lógico. Aunque se usa por claridad o para reducir el tamaño del conjunto retornado, no es funcionalmente necesario para el operador <code>IN</code>."
+  },
+  {
+    block: "práctica",
+    text: "¿Cuál es el error en este código?",
+    code: `WITH via_cte (id, plata) AS (
+    SELECT id, monto FROM Viajes
+)
+SELECT id, monto FROM via_cte;`,
+    options: [
+      "Las columnas en el SELECT final deben coincidir con los nombres definidos en la CTE (id, plata).",
+      "No se pueden definir nombres de columnas en la cabecera de la CTE.",
+      "via_cte es un nombre reservado.",
+      "Falta el WHERE.",
+      "El alias via_cte no puede usarse en el FROM."
+    ],
+    correct: 0,
+    explanation: "Si se definen alias en la cabecera de la CTE (<code>id, plata</code>), el <code>SELECT</code> externo <strong>debe usar esos nombres</strong>. El error es usar <code>monto</code> en vez de <code>plata</code>. La corrección: <code>SELECT id, plata FROM via_cte;</code>"
+  },
+  {
+    block: "práctica",
+    text: "¿Qué intentamos calcular aquí?",
+    code: `SELECT zona_id, SUM(monto) 
+FROM Viajes
+GROUP BY zona_id
+HAVING SUM(monto) > (
+    SELECT SUM(monto)/10 FROM Viajes
+);`,
+    options: [
+      "Zonas que recaudaron más del 10% del total general.",
+      "Zonas con más de 10 viajes.",
+      "El 10% de los viajes de cada zona.",
+      "Un error porque hay dos SUM.",
+      "Zonas con montos superiores a 10."
+    ],
+    correct: 0,
+    explanation: "La subconsulta calcula <strong>el 10% de la recaudación global</strong> (<code>SUM(monto)/10</code>). El <code>HAVING</code> luego compara la recaudación de cada zona contra ese umbral, retornando solo las zonas que superen el 10% del total."
+  },
+  {
+    block: "práctica",
+    text: "¿Por qué esta consulta podría ser lenta en una tabla con millones de filas?",
+    code: `SELECT * FROM Viajes v
+WHERE monto > (
+    SELECT AVG(monto) FROM Viajes v2 
+    WHERE v2.zona_id = v.zona_id
+);`,
+    options: [
+      "Porque usa el operador >.",
+      "Porque es una subconsulta correlacionada que se ejecuta por cada fila de Viajes.",
+      "Porque AVG es una función lenta por naturaleza.",
+      "Porque no tiene un LIMIT.",
+      "Porque las tablas tienen alias."
+    ],
+    correct: 1,
+    explanation: "Las <strong>subconsultas correlacionadas</strong> tienen un costo de <code>O(N×M)</code>: se recalcula el AVG de la zona para cada fila de la tabla exterior. En millones de filas esto es crítico. La solución es precalcular con una CTE o Window Function."
+  },
+  {
+    block: "práctica",
+    text: "¿Qué ventaja ofrece una CTE sobre una tabla derivada cuando el cálculo se usa dos veces?",
+    code: `WITH resumen AS (
+    SELECT chofer_id, AVG(monto) as avg_monto,
+           COUNT(*) as viajes
+    FROM Viajes GROUP BY chofer_id
+)
+SELECT * FROM resumen WHERE avg_monto > 500
+UNION ALL
+SELECT * FROM resumen WHERE viajes > 100;`,
+    options: [
+      "Ocupa menos memoria RAM.",
+      "Se puede referenciar múltiples veces sin repetir el código (reutilización).",
+      "Permite usar DELETE.",
+      "No requiere alias.",
+      "Es compatible con Excel."
+    ],
+    correct: 1,
+    explanation: "La CTE <code>resumen</code> se define <strong>una sola vez</strong> y se referencia <em>dos veces</em> en la consulta. Con tablas derivadas habría que duplicar toda la subconsulta. Las CTEs mejoran la legibilidad y el mantenimiento del código SQL complejo."
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let current = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+
+// ============================================================
+// SQL SYNTAX HIGHLIGHTING (simple)
+// ============================================================
+function highlight(sql) {
+  const keywords = ['SELECT','FROM','WHERE','JOIN','LEFT JOIN','INNER JOIN','ON','GROUP BY','HAVING','ORDER BY','WITH','AS','AND','OR','NOT','IN','EXISTS','UNION','UNION ALL','INTERSECT','EXCEPT','ALL','ANY','SOME','DISTINCT','LIMIT','BY','DESC','ASC','NULL','IS','LIKE','BETWEEN','CASE','WHEN','THEN','ELSE','END','INSERT','UPDATE','DELETE','CREATE','TABLE','INTO','VALUES','SET','CTE','RECURSIVE'];
+  const functions = ['SELECT','COUNT','SUM','AVG','MAX','MIN','COALESCE','NOW','DATE','EXTRACT','ROW_NUMBER','RANK','DENSE_RANK','LEAD','LAG','OVER','PARTITION'];
+
+  let result = sql
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Comments
+  result = result.replace(/(--.*)/g, '<span class="cmt">$1</span>');
+
+  // Strings
+  result = result.replace(/'([^']*)'/g, '<span class="str">\'$1\'</span>');
+
+  // Numbers
+  result = result.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+
+  // Keywords (case-insensitive)
+  const kwPattern = new RegExp('\\b(' + keywords.join('|') + ')\\b', 'gi');
+  result = result.replace(kwPattern, m => `<span class="kw">${m.toUpperCase()}</span>`);
+
+  // Functions
+  const fnPattern = new RegExp('\\b(' + functions.join('|') + ')(?=\\s*\\()', 'gi');
+  result = result.replace(fnPattern, m => `<span class="fn">${m.toUpperCase()}</span>`);
+
+  // Table names (capitalized words)
+  result = result.replace(/\b(Viajes|Pasajeros|Choferes|Zonas|ResumenViajes|ventas_por_zona|promedio_global|rec_chofer|ranking|resumen|via_cte|t)\b/g,
+    '<span class="tbl">$1</span>');
+
+  return result;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderQuestion() {
+  const q = questions[current];
+  answered = false;
+
+  // Block badge
+  const badge = document.getElementById('block-badge');
+  if (q.block === 'práctica') {
+    badge.textContent = 'Bloque 2: Práctica SQL & CTEs';
+    badge.className = 'block-badge practica';
+  } else {
+    badge.textContent = 'Bloque 1: Teoría Relacional';
+    badge.className = 'block-badge';
+  }
+
+  document.getElementById('q-number').textContent = `Pregunta ${current + 1} de ${questions.length}`;
+  document.getElementById('question-text').textContent = q.text;
+
+  // SQL block
+  const sqlBlock = document.getElementById('sql-block');
+  const sqlCode  = document.getElementById('sql-code');
+  if (q.code) {
+    sqlBlock.style.display = 'block';
+    sqlCode.innerHTML = highlight(q.code);
+  } else {
+    sqlBlock.style.display = 'none';
+  }
+
+  // Options
+  const optList = document.getElementById('options-list');
+  optList.innerHTML = '';
+  const letters = ['A','B','C','D','E'];
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="option-letter">${letters[i]}</div>
+      <div class="option-text">${opt}</div>
+      <div class="option-icon"></div>
+    `;
+    div.onclick = () => selectOption(i);
+    optList.appendChild(div);
+  });
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.style.display = 'none';
+
+  document.getElementById('btn-next').className = 'btn-next';
+
+  // Progress
+  const pct = Math.round((current / questions.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Stats
+  updateStats();
+
+  // Re-animate card
+  const card = document.getElementById('quiz-card');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'slideUp 0.35s cubic-bezier(0.4,0,0.2,1)';
+}
+
+function selectOption(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[current];
+  const opts = document.querySelectorAll('.option');
+  const letters = ['A','B','C','D','E'];
+
+  opts.forEach(o => {
+    o.classList.add('disabled');
+    const i = parseInt(o.dataset.idx);
+    if (i === q.correct) {
+      o.classList.add('correct');
+      o.querySelector('.option-icon').textContent = '✓';
+    }
+  });
+
+  const isCorrect = idx === q.correct;
+  if (isCorrect) {
+    correct++;
+  } else {
+    wrong++;
+    opts[idx].classList.add('wrong');
+    opts[idx].querySelector('.option-icon').textContent = '✗';
+  }
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+  fb.style.display = 'block';
+  document.getElementById('fb-title').innerHTML = isCorrect
+    ? '✓ &nbsp;Correcto'
+    : `✗ &nbsp;Incorrecto — La respuesta era ${letters[q.correct]}`;
+  document.getElementById('fb-body').innerHTML = q.explanation;
+
+  document.getElementById('btn-next').className = 'btn-next show';
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('stat-progress').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('stat-correct').textContent = `${correct} correctas`;
+  document.getElementById('stat-wrong').textContent = `${wrong} incorrectas`;
+
+  const answered = correct + wrong;
+  const pct = answered > 0 ? Math.round((correct / answered) * 100) : '—';
+  document.getElementById('stat-pct').textContent = answered > 0 ? `${pct}%` : '—';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showFinal();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showFinal() {
+  document.getElementById('quiz-card').style.display = 'none';
+  const fs = document.getElementById('final-screen');
+  fs.classList.add('show');
+
+  const pct = Math.round((correct / questions.length) * 100);
+  document.getElementById('final-pct').textContent = pct + '%';
+  document.getElementById('fs-correct').textContent = correct;
+  document.getElementById('fs-wrong').textContent = wrong;
+
+  // Color + title
+  let title, sub, color;
+  if (pct >= 90) {
+    title = '🏆 Excelente Rendimiento'; sub = 'Dominas los conceptos de bases de datos relacionales.'; color = '#10b981';
+  } else if (pct >= 70) {
+    title = '📊 Buen Desempeño'; sub = 'Sólida comprensión de SQL. Repasa los temas fallidos.'; color = '#58a6ff';
+  } else if (pct >= 50) {
+    title = '📚 En Progreso'; sub = 'Recomendamos repasar JOINs, subconsultas y CTEs.'; color = '#e3b341';
+  } else {
+    title = '🔄 A Seguir Practicando'; sub = 'Revisa la teoría del modelo relacional y vuelve a intentarlo.'; color = '#f85149';
+  }
+
+  document.getElementById('final-title').textContent = title;
+  document.getElementById('final-sub').textContent = sub;
+  document.getElementById('final-pct').style.color = color;
+
+  // Ring animation
+  const circumference = 364;
+  const offset = circumference - (pct / 100) * circumference;
+  const ring = document.getElementById('ring-fill');
+  ring.style.stroke = color;
+  setTimeout(() => ring.style.strokeDashoffset = offset, 100);
+
+  // Progress 100%
+  document.getElementById('progress-fill').style.width = '100%';
+}
+
+function restartQuiz() {
+  current = 0; correct = 0; wrong = 0; answered = false;
+  shuffle(questions);
+  document.getElementById('quiz-card').style.display = 'block';
+  document.getElementById('final-screen').classList.remove('show');
+  document.getElementById('ring-fill').style.strokeDashoffset = '364';
+  renderQuestion();
+}
+
+// ============================================================
+// SHUFFLE (Fisher-Yates)
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+shuffle(questions);
+renderQuestion();
+</script>
+</body>
+</html>
